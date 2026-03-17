@@ -12,6 +12,15 @@ const App = {
     window.addEventListener('online', () => App._updateNetworkBadge(true));
     window.addEventListener('offline', () => App._updateNetworkBadge(false));
     App._updateNetworkBadge(navigator.onLine);
+
+    // Auto-detect modal open/close to lock body scroll
+    const obs = new MutationObserver(() => {
+      const anyOpen = document.querySelector('.modal:not(.hidden)');
+      document.body.classList.toggle('modal-open', !!anyOpen);
+    });
+    document.querySelectorAll('.modal').forEach(m => {
+      obs.observe(m, { attributes: true, attributeFilter: ['class'] });
+    });
   },
 
   _updateNetworkBadge(isOnline) {
