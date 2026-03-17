@@ -223,7 +223,7 @@
   text-transform: uppercase; border-bottom: 1px solid var(--border);
 }
 .sc-table td {
-  padding: 8px 4px; border-bottom: 1px solid rgba(36,53,85,0.5);
+  padding: 8px 4px; border-bottom: 1px solid rgba(224,213,204,0.6);
   vertical-align: middle;
 }
 .sc-table tr:last-child td { border-bottom: none; }
