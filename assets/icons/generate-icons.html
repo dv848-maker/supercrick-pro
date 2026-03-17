@@ -6,23 +6,23 @@
 function drawIcon(canvas) {
   const ctx = canvas.getContext('2d');
   const s = canvas.width;
-  const r = s * 0.22; // rounded corner radius
+  const r = s * 0.22;
 
-  // === Background with rich gradient ===
+  // === Rich maroon-to-dark background ===
   const bgGrad = ctx.createLinearGradient(0, 0, s, s);
-  bgGrad.addColorStop(0, '#1A0A3E');
-  bgGrad.addColorStop(0.4, '#0F1B4C');
-  bgGrad.addColorStop(0.7, '#0A2A3C');
-  bgGrad.addColorStop(1, '#051C2C');
+  bgGrad.addColorStop(0, '#3A0A14');
+  bgGrad.addColorStop(0.35, '#2A0810');
+  bgGrad.addColorStop(0.7, '#1A0608');
+  bgGrad.addColorStop(1, '#120406');
   ctx.fillStyle = bgGrad;
   ctx.beginPath();
   ctx.roundRect(0, 0, s, s, r);
   ctx.fill();
 
-  // === Subtle radial glow behind ball ===
+  // Subtle radial glow
   const glowGrad = ctx.createRadialGradient(s*0.5, s*0.42, 0, s*0.5, s*0.42, s*0.5);
-  glowGrad.addColorStop(0, 'rgba(124,108,247,0.35)');
-  glowGrad.addColorStop(0.4, 'rgba(0,245,147,0.12)');
+  glowGrad.addColorStop(0, 'rgba(139,26,43,0.35)');
+  glowGrad.addColorStop(0.4, 'rgba(201,168,76,0.08)');
   glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = glowGrad;
   ctx.beginPath();
@@ -30,17 +30,7 @@ function drawIcon(canvas) {
   ctx.fill();
 
   // === Cricket Ball ===
-  const ballX = s * 0.5;
-  const ballY = s * 0.38;
-  const ballR = s * 0.22;
-
-  // Ball shadow
-  ctx.save();
-  ctx.shadowColor = 'rgba(220,40,40,0.5)';
-  ctx.shadowBlur = s * 0.08;
-  ctx.shadowOffsetY = s * 0.02;
-
-  // Ball base gradient (red leather)
+  const ballX = s * 0.5, ballY = s * 0.38, ballR = s * 0.22;
   const ballGrad = ctx.createRadialGradient(ballX - ballR*0.3, ballY - ballR*0.3, ballR*0.05, ballX, ballY, ballR);
   ballGrad.addColorStop(0, '#FF4444');
   ballGrad.addColorStop(0.3, '#E03030');
@@ -50,155 +40,102 @@ function drawIcon(canvas) {
   ctx.beginPath();
   ctx.arc(ballX, ballY, ballR, 0, Math.PI * 2);
   ctx.fill();
-  ctx.restore();
 
-  // Ball shine highlight
+  // Ball shine
   const shineGrad = ctx.createRadialGradient(ballX - ballR*0.35, ballY - ballR*0.35, 0, ballX - ballR*0.2, ballY - ballR*0.2, ballR*0.7);
-  shineGrad.addColorStop(0, 'rgba(255,255,255,0.45)');
-  shineGrad.addColorStop(0.3, 'rgba(255,255,255,0.12)');
+  shineGrad.addColorStop(0, 'rgba(255,255,255,0.40)');
+  shineGrad.addColorStop(0.3, 'rgba(255,255,255,0.10)');
   shineGrad.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = shineGrad;
   ctx.beginPath();
   ctx.arc(ballX, ballY, ballR, 0, Math.PI * 2);
   ctx.fill();
 
-  // Ball seam (stitching) — curved lines
-  ctx.save();
-  ctx.strokeStyle = '#FFD700';
+  // Seam lines (gold)
+  ctx.strokeStyle = '#C9A84C';
   ctx.lineWidth = s * 0.012;
   ctx.lineCap = 'round';
-  ctx.shadowColor = 'rgba(255,215,0,0.6)';
-  ctx.shadowBlur = s * 0.015;
-
-  // Left seam curve
   ctx.beginPath();
   ctx.arc(ballX, ballY, ballR * 0.65, Math.PI - 0.9, Math.PI + 0.9);
   ctx.stroke();
-
-  // Right seam curve
   ctx.beginPath();
   ctx.arc(ballX, ballY, ballR * 0.65, -0.9, 0.9);
   ctx.stroke();
 
-  // Stitch marks on left seam
-  const stitchCount = 8;
-  for (let i = 0; i < stitchCount; i++) {
-    const angle = Math.PI - 0.8 + (1.6 * i / (stitchCount - 1));
-    const cx = ballX + Math.cos(angle) * ballR * 0.65;
-    const cy = ballY + Math.sin(angle) * ballR * 0.65;
-    const perpAngle = angle + Math.PI/2;
-    const tickLen = s * 0.012;
-    ctx.beginPath();
-    ctx.moveTo(cx + Math.cos(perpAngle)*tickLen, cy + Math.sin(perpAngle)*tickLen);
-    ctx.lineTo(cx - Math.cos(perpAngle)*tickLen, cy - Math.sin(perpAngle)*tickLen);
-    ctx.stroke();
+  // Stitch marks
+  for (let side = 0; side < 2; side++) {
+    const baseAngle = side === 0 ? Math.PI : 0;
+    for (let i = 0; i < 7; i++) {
+      const angle = baseAngle - 0.75 + (1.5 * i / 6);
+      const cx = ballX + Math.cos(angle) * ballR * 0.65;
+      const cy = ballY + Math.sin(angle) * ballR * 0.65;
+      const perpAngle = angle + Math.PI/2;
+      const tickLen = s * 0.011;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(perpAngle)*tickLen, cy + Math.sin(perpAngle)*tickLen);
+      ctx.lineTo(cx - Math.cos(perpAngle)*tickLen, cy - Math.sin(perpAngle)*tickLen);
+      ctx.stroke();
+    }
   }
 
-  // Stitch marks on right seam
-  for (let i = 0; i < stitchCount; i++) {
-    const angle = -0.8 + (1.6 * i / (stitchCount - 1));
-    const cx = ballX + Math.cos(angle) * ballR * 0.65;
-    const cy = ballY + Math.sin(angle) * ballR * 0.65;
-    const perpAngle = angle + Math.PI/2;
-    const tickLen = s * 0.012;
-    ctx.beginPath();
-    ctx.moveTo(cx + Math.cos(perpAngle)*tickLen, cy + Math.sin(perpAngle)*tickLen);
-    ctx.lineTo(cx - Math.cos(perpAngle)*tickLen, cy - Math.sin(perpAngle)*tickLen);
-    ctx.stroke();
-  }
-  ctx.restore();
-
-  // === Cricket Stumps behind ball (subtle) ===
-  const stumpW = s * 0.018;
-  const stumpH = s * 0.28;
-  const stumpBaseY = ballY + ballR * 0.3;
-  ctx.globalAlpha = 0.3;
+  // Stumps
+  ctx.globalAlpha = 0.25;
+  const stumpBaseY = ballY + ballR * 0.3, stumpH = s * 0.28, stumpW = s * 0.016;
   for (let i = -1; i <= 1; i++) {
-    const sx = ballX + i * s * 0.05;
+    const sx = ballX + i * s * 0.045;
     const stGrad = ctx.createLinearGradient(sx, stumpBaseY, sx, stumpBaseY + stumpH);
     stGrad.addColorStop(0, '#F5DEB3');
     stGrad.addColorStop(1, '#8B7355');
     ctx.fillStyle = stGrad;
     ctx.fillRect(sx - stumpW/2, stumpBaseY, stumpW, stumpH);
   }
-  // Bails
   ctx.fillStyle = '#F5DEB3';
-  ctx.fillRect(ballX - s*0.06, stumpBaseY - s*0.006, s*0.05, s*0.01);
-  ctx.fillRect(ballX + s*0.01, stumpBaseY - s*0.006, s*0.05, s*0.01);
+  ctx.fillRect(ballX - s*0.055, stumpBaseY - s*0.005, s*0.045, s*0.008);
+  ctx.fillRect(ballX + s*0.01, stumpBaseY - s*0.005, s*0.045, s*0.008);
   ctx.globalAlpha = 1.0;
 
-  // === "SAI" Text — bold gradient ===
-  ctx.save();
-  const textY = s * 0.78;
-  const fontSize = s * 0.18;
-  ctx.font = `900 ${fontSize}px 'Arial Black', Arial, sans-serif`;
+  // 'SAI' text
+  ctx.font = 'bold ' + (s * 0.18) + 'px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.letterSpacing = `${s*0.02}px`;
-
-  // Text glow
-  ctx.shadowColor = 'rgba(124,108,247,0.8)';
-  ctx.shadowBlur = s * 0.04;
-
-  const textGrad = ctx.createLinearGradient(s*0.25, textY, s*0.75, textY);
-  textGrad.addColorStop(0, '#B8B0FF');
-  textGrad.addColorStop(0.5, '#FFFFFF');
-  textGrad.addColorStop(1, '#00F593');
+  const textGrad = ctx.createLinearGradient(s*0.25, s*0.78, s*0.75, s*0.78);
+  textGrad.addColorStop(0, '#FFFFFF');
+  textGrad.addColorStop(0.5, '#C9A84C');
+  textGrad.addColorStop(1, '#FFFFFF');
   ctx.fillStyle = textGrad;
-  ctx.fillText('SAI', s/2, textY);
-  ctx.restore();
+  ctx.fillText('SAI', s/2, s * 0.78);
 
-  // === "CRICK" subtitle ===
-  ctx.save();
-  const subY = s * 0.9;
-  ctx.font = `700 ${s*0.075}px Arial, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#00F593';
-  ctx.shadowColor = 'rgba(0,245,147,0.5)';
-  ctx.shadowBlur = s * 0.02;
-  ctx.fillText('C R I C K', s/2, subY);
-  ctx.restore();
+  // 'CRICK' text
+  ctx.font = 'bold ' + (s * 0.075) + 'px Arial';
+  ctx.fillStyle = '#C9A84C';
+  ctx.fillText('C R I C K', s/2, s * 0.9);
 
-  // === PRO badge ===
-  const badgeW = s * 0.18;
-  const badgeH = s * 0.075;
-  const badgeX = s * 0.82;
-  const badgeY = s * 0.12;
-
-  ctx.save();
-  ctx.shadowColor = 'rgba(255,215,0,0.6)';
-  ctx.shadowBlur = s * 0.03;
-
+  // PRO badge
+  const badgeW = s * 0.18, badgeH = s * 0.07, badgeX = s * 0.82, badgeY = s * 0.12;
   const badgeGrad = ctx.createLinearGradient(badgeX - badgeW/2, badgeY, badgeX + badgeW/2, badgeY);
-  badgeGrad.addColorStop(0, '#FFD700');
-  badgeGrad.addColorStop(0.5, '#FFF4B0');
-  badgeGrad.addColorStop(1, '#FFD700');
+  badgeGrad.addColorStop(0, '#C9A84C');
+  badgeGrad.addColorStop(0.5, '#E8D5A0');
+  badgeGrad.addColorStop(1, '#C9A84C');
   ctx.fillStyle = badgeGrad;
+  const bx = badgeX - badgeW/2, by = badgeY - badgeH/2, bw = badgeW, bh = badgeH, br = badgeH/2;
   ctx.beginPath();
-  ctx.roundRect(badgeX - badgeW/2, badgeY - badgeH/2, badgeW, badgeH, badgeH/2);
+  ctx.roundRect(bx, by, bw, bh, br);
   ctx.fill();
-
-  ctx.fillStyle = '#1A0A3E';
-  ctx.font = `900 ${s*0.045}px Arial, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#3A0A14';
+  ctx.font = 'bold ' + (s * 0.042) + 'px Arial';
   ctx.fillText('PRO', badgeX, badgeY + s*0.002);
-  ctx.restore();
 
-  // === Outer border ring (subtle) ===
-  ctx.strokeStyle = 'rgba(124,108,247,0.25)';
-  ctx.lineWidth = s * 0.008;
+  // Gold border
+  ctx.strokeStyle = 'rgba(201,168,76,0.25)';
+  ctx.lineWidth = s * 0.006;
   ctx.beginPath();
-  ctx.roundRect(s*0.02, s*0.02, s*0.96, s*0.96, r - s*0.01);
+  ctx.roundRect(s*0.015, s*0.015, s*0.97, s*0.97, r - s*0.01);
   ctx.stroke();
 }
 
 drawIcon(document.getElementById('c192'));
 drawIcon(document.getElementById('c512'));
 
-// Auto-download
 document.getElementById('c192').toBlob(b => {
   const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'icon-192.png'; a.click();
 });
