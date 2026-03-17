@@ -679,46 +679,6 @@ html, body {
 .coin-toss-btn:active { transform: scale(0.95); }
 .coin-toss-btn:disabled { opacity: 0.6; }
 
-/* ===== MODE SELECTOR OVERLAY ===== */
-.mode-selector-overlay {
-  position: fixed; inset: 0; z-index: 10000;
-  background: var(--bg-dark);
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; text-align: center; padding: 24px;
-}
-.mode-selector-overlay.hidden { display: none; }
-.mode-logo { font-size: 56px; margin-bottom: 8px; }
-.mode-selector-overlay h1 {
-  font-size: 28px; font-weight: 800;
-  background: var(--gradient-primary); -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent; margin-bottom: 4px;
-}
-.mode-selector-overlay .mode-author {
-  font-size: 13px; color: var(--primary-light); margin-bottom: 28px;
-}
-.mode-selector-overlay p.mode-desc {
-  font-size: 14px; color: var(--text-secondary); margin-bottom: 24px;
-  max-width: 320px;
-}
-.mode-cards { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 320px; }
-.mode-card {
-  display: flex; align-items: center; gap: 14px;
-  padding: 16px; background: var(--bg-card);
-  border: 2px solid var(--border); border-radius: var(--radius);
-  cursor: pointer; text-align: left;
-}
-.mode-card.selected { border-color: var(--primary); background: rgba(108,92,231,0.15); }
-.mode-card .material-icons-round { font-size: 32px; color: var(--primary-light); }
-.mode-card-info h3 { font-size: 15px; font-weight: 700; }
-.mode-card-info p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-.mode-continue-btn {
-  margin-top: 20px; padding: 14px 48px; border: none;
-  border-radius: 30px; background: var(--gradient-primary);
-  color: white; font-size: 16px; font-weight: 700; cursor: pointer;
-  box-shadow: 0 4px 16px rgba(108,92,231,0.4);
-}
-.mode-continue-btn:active { transform: scale(0.96); }
-
 /* ===== AUTHOR HIGHLIGHT ===== */
 .author-badge {
   display: inline-flex; align-items: center; gap: 4px;
@@ -1032,3 +992,16 @@ html, body {
   color: var(--text-primary);
   font-size: 14px;
 }
+
+/* ═══════════════════════════════════════
+   MATCH CARD DELETE / OPTIONS BUTTON
+═══════════════════════════════════════ */
+.match-more-btn {
+  padding: 2px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-muted) !important;
+}
+.match-more-btn:hover { color: var(--primary) !important; }
