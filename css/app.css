@@ -1005,3 +1005,108 @@ html, body {
   color: var(--text-muted) !important;
 }
 .match-more-btn:hover { color: var(--primary) !important; }
+
+/* ═══════════════════════════════════════
+   TOURNAMENT STYLES
+═══════════════════════════════════════ */
+.tournament-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.tournament-card:hover { border-color: var(--primary); }
+
+.tc-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.tc-type-badge {
+  background: var(--primary-muted, rgba(108,92,231,0.2));
+  color: var(--primary);
+  font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 20px;
+}
+.tc-status { font-size: 11px; font-weight: 700; margin-left: auto; }
+.tc-status.active { color: #00e676; }
+.tc-status.completed { color: var(--text-muted); }
+.tc-name { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+.tc-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+.tc-actions { display: flex; gap: 8px; }
+
+.tw-step { display: none; }
+.tw-step.active { display: block; }
+
+.tw-type-btn.active { background: var(--primary); color: #fff; }
+
+.tw-team-chip {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-card2); border-radius: var(--radius-xs);
+  padding: 8px 12px; margin-bottom: 6px;
+}
+.tw-team-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--primary); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+
+.tw-round-header {
+  background: linear-gradient(90deg, var(--primary), var(--primary-light, #a29bfe));
+  color: #fff; font-weight: 700; font-size: 12px;
+  padding: 6px 12px; border-radius: var(--radius-xs);
+  margin: 10px 0 6px;
+}
+
+.tw-fixture-row {
+  background: var(--bg-card2); border-radius: var(--radius-xs);
+  padding: 8px 12px; margin-bottom: 6px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.tw-fixture-teams { font-weight: 600; font-size: 14px; }
+.tw-fixture-meta { display: flex; gap: 8px; }
+.tw-fixture-meta input[type="date"],
+.tw-fixture-meta input[type="time"] {
+  background: var(--bg-card); border: 1px solid var(--border);
+  color: var(--text-primary); border-radius: 6px;
+  padding: 4px 6px; font-size: 11px;
+}
+
+/* Tournament Detail */
+.tc-detail-header {
+  background: var(--gradient-hero, linear-gradient(135deg, #6C5CE7, #a29bfe));
+  padding: 16px 20px; color: #fff;
+}
+.tc-detail-name { font-size: 22px; font-weight: 800; }
+.tc-detail-meta { font-size: 12px; opacity: 0.85; margin: 4px 0 10px; }
+.tc-detail-actions { display: flex; gap: 8px; }
+
+.td-tab-bar {
+  display: flex; border-bottom: 2px solid var(--border);
+  background: var(--bg-card); position: sticky; top: 56px; z-index: 10;
+}
+.td-tab {
+  flex: 1; padding: 12px; background: none; border: none;
+  color: var(--text-muted); font-weight: 600; font-size: 13px;
+  border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;
+}
+.td-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+.td-tab-content { display: none; }
+.td-tab-content.active { display: block; }
+
+.tf-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-xs); padding: 10px 14px; margin-bottom: 8px;
+}
+.tf-card.completed { border-left: 3px solid #00e676; }
+.tf-header { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 11px; color: var(--text-muted); }
+.tf-teams { display: flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 6px; }
+.tf-vs { color: var(--text-muted); font-size: 12px; }
+.tf-result { font-size: 12px; color: #00e676; font-weight: 700; margin-bottom: 6px; }
+
+.standings-table { width: 100%; }
+.standings-top { background: rgba(255, 215, 0, 0.1); }
+.standings-top td:first-child::before { content: '🏆 '; }
+
+.btn-small-action.danger { color: var(--danger); border-color: var(--danger); }
