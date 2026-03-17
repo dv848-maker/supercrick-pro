@@ -10,6 +10,12 @@ db.version(1).stores({
   fieldSetups: '++id, name, createdAt'
 });
 
+db.version(2).stores({
+  tournaments: '++id, name, type, status, createdAt',
+  tournamentTeams: '++id, tournamentId, teamId',
+  tournamentFixtures: '++id, tournamentId, round, homeTeamId, awayTeamId, status'
+});
+
 const DB = {
   // === PLAYERS ===
   async addPlayer(player) {
@@ -160,6 +166,23 @@ const DB = {
     await db.balls.clear();
     await db.fieldSetups.clear();
   },
+
+  // === TOURNAMENTS ===
+  async addTournament(t) { t.createdAt = new Date().toISOString(); return await db.tournaments.add(t); },
+  async updateTournament(id, data) { return await db.tournaments.update(id, data); },
+  async getTournament(id) { return await db.tournaments.get(id); },
+  async getAllTournaments() { return (await db.tournaments.toArray()).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)); },
+  async deleteTournament(id) {
+    const fixtures = await db.tournamentFixtures.where('tournamentId').equals(id).toArray();
+    for (const f of fixtures) await db.tournamentFixtures.delete(f.id);
+    await db.tournamentTeams.where('tournamentId').equals(id).delete();
+    return await db.tournaments.delete(id);
+  },
+  async addTournamentTeam(t) { return await db.tournamentTeams.add(t); },
+  async getTournamentTeams(tournamentId) { return await db.tournamentTeams.where('tournamentId').equals(tournamentId).toArray(); },
+  async addTournamentFixture(f) { return await db.tournamentFixtures.add(f); },
+  async getTournamentFixtures(tournamentId) { return await db.tournamentFixtures.where('tournamentId').equals(tournamentId).sortBy('round'); },
+  async updateTournamentFixture(id, data) { return await db.tournamentFixtures.update(id, data); },
 
   // === STATS HELPERS ===
   async getPlayerMatchStats(playerId) {

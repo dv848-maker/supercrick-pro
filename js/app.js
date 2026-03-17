@@ -115,7 +115,9 @@ const App = {
       stats: 'Statistics', settings: 'More', search: 'Search',
       'new-match': 'New Match', scoring: 'Live Scoring',
       scorecard: 'Scorecard', field: 'Field Positions',
-      'player-profile': 'Player Profile', 'match-detail': 'Match Details'
+      'player-profile': 'Player Profile', 'match-detail': 'Match Details',
+      tournaments: '🏆 Tournaments', 'tournament-create': 'New Tournament',
+      'tournament-detail': 'Tournament'
     };
     const title = titles[screen] || 'Sai-Crick Pro';
     document.getElementById('page-title').innerHTML = screen === 'home'
@@ -123,12 +125,12 @@ const App = {
       : title;
 
     const backBtn = document.getElementById('btn-back');
-    const mainScreens = ['home', 'matches', 'players', 'stats', 'settings'];
+    const mainScreens = ['home', 'matches', 'players', 'stats', 'settings', 'tournaments'];
     backBtn.classList.toggle('hidden', mainScreens.includes(screen));
 
     // Show/hide bottom nav on scoring screen
     const bottomNav = document.getElementById('bottom-nav');
-    const hideNavScreens = ['scoring', 'new-match', 'field'];
+    const hideNavScreens = ['scoring', 'new-match', 'field', 'tournament-create', 'tournament-detail'];
     bottomNav.style.display = hideNavScreens.includes(screen) ? 'none' : 'flex';
 
     // Screen-specific init
@@ -153,6 +155,10 @@ const App = {
         if (params.playerId) await PlayerMgr.loadProfile(params.playerId);
         break;
       case 'field': FieldPos.init(); break;
+      case 'tournaments':
+        Tournament.loadList();
+        Tournament._loadExistingTeams();
+        break;
     }
   },
 
@@ -176,10 +182,10 @@ const App = {
         n.classList.toggle('active', n.dataset.screen === prev);
       });
 
-      const mainScreens = ['home', 'matches', 'players', 'stats', 'settings'];
+      const mainScreens = ['home', 'matches', 'players', 'stats', 'settings', 'tournaments'];
       document.getElementById('btn-back').classList.toggle('hidden', mainScreens.includes(prev));
       document.getElementById('bottom-nav').style.display =
-        ['scoring', 'new-match', 'field'].includes(prev) ? 'none' : 'flex';
+        ['scoring', 'new-match', 'field', 'tournament-create', 'tournament-detail'].includes(prev) ? 'none' : 'flex';
 
       const titles = {
         home: 'Sai-Crick Pro', matches: 'Matches', players: 'Players',
