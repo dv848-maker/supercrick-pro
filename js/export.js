@@ -1,64 +1,37 @@
-// SuperCrick Pro - Export & Share
+// Sai-Crick Pro - PDF Export
 const ExportDoc = {
   async exportScorecard(matchId) {
-    if (!matchId) matchId = Scoring.matchId;
+    if (!matchId) matchId = Scoring?.matchId;
     if (!matchId) { Utils.toast('No match to export'); return; }
-
     try {
-      Utils.toast('Generating scorecard...');
-      const doc = await ExportDoc._buildDocx(matchId);
-      const blob = await docx.Packer.toBlob(doc);
-
-      const match = await DB.getMatch(matchId);
-      const team1 = await DB.getTeam(match.team1Id);
-      const team2 = await DB.getTeam(match.team2Id);
-      const filename = `${team1?.name || 'Team1'}_vs_${team2?.name || 'Team2'}_${Utils.formatDate(match.date)}.docx`.replace(/\s+/g, '_');
-
-      saveAs(blob, filename);
-      Utils.toast('Scorecard exported!');
-    } catch (e) {
+      Utils.toast('Generating PDF...');
+      const filename = await ExportDoc._buildAndSavePDF(matchId, false);
+      Utils.toast('PDF saved: ' + filename);
+    } catch(e) {
       console.error('Export error:', e);
       Utils.toast('Export failed: ' + e.message);
     }
   },
 
   async shareScorecard(matchId) {
-    if (!matchId) matchId = Scoring.matchId;
+    if (!matchId) matchId = Scoring?.matchId;
     if (!matchId) { Utils.toast('No match to share'); return; }
-
     try {
-      const doc = await ExportDoc._buildDocx(matchId);
-      const blob = await docx.Packer.toBlob(doc);
-
-      const match = await DB.getMatch(matchId);
-      const team1 = await DB.getTeam(match.team1Id);
-      const team2 = await DB.getTeam(match.team2Id);
-      const filename = `${team1?.name || 'Team1'}_vs_${team2?.name || 'Team2'}_Scorecard.docx`.replace(/\s+/g, '_');
-
-      const file = new File([blob], filename, { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-
-      if (navigator.share && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          title: `${team1?.name} vs ${team2?.name} - Scorecard`,
-          text: match.result || 'Cricket Scorecard',
-          files: [file]
-        });
-      } else {
-        // Fallback: download
-        saveAs(blob, filename);
-        Utils.toast('File downloaded (sharing not supported on this browser)');
-      }
-    } catch (e) {
-      if (e.name !== 'AbortError') {
-        console.error('Share error:', e);
-        Utils.toast('Share failed: ' + e.message);
-      }
+      await ExportDoc._buildAndSavePDF(matchId, true);
+    } catch(e) {
+      if (e.name !== 'AbortError') Utils.toast('Share failed: ' + e.message);
     }
   },
 
-  async _buildDocx(matchId) {
-    const { Document, Paragraph, Table, TableRow, TableCell, TextRun, AlignmentType,
-      HeadingLevel, BorderStyle, WidthType, ShadingType, TableLayoutType } = docx;
+  async _buildAndSavePDF(matchId, share) {
+    // Try multiple ways to access jsPDF
+    let jsPDF = (window.jspdf && window.jspdf.jsPDF)
+      || (window.jsPDF)
+      || (typeof jspdf !== 'undefined' && jspdf.jsPDF);
+    if (!jsPDF) {
+      Utils.toast('PDF library not ready. Please ensure you are online for first load.');
+      return;
+    }
 
     const match = await DB.getMatch(matchId);
     const team1 = await DB.getTeam(match.team1Id);
@@ -68,90 +41,84 @@ const ExportDoc = {
     await App.refreshPlayerMap();
     const players = App._playerMap;
 
-    const sections = [];
-
-    // Title
-    sections.push(
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 100 },
-        children: [
-          new TextRun({ text: 'SUPERCRICK PRO', bold: true, size: 28, color: '6C5CE7', font: 'Arial' })
-        ]
-      }),
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 200 },
-        children: [
-          new TextRun({ text: 'Match Scorecard', size: 20, color: '555555', font: 'Arial' })
-        ]
-      })
-    );
-
-    // Match Info
     const t1Name = team1?.name || 'Team 1';
     const t2Name = team2?.name || 'Team 2';
 
-    sections.push(
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 80 },
-        children: [
-          new TextRun({ text: `${t1Name}  vs  ${t2Name}`, bold: true, size: 26, font: 'Arial' })
-        ]
-      }),
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 80 },
-        children: [
-          new TextRun({ text: `${match.format || 'T20'} Match`, size: 20, color: '6C5CE7', font: 'Arial' }),
-          new TextRun({ text: `  •  ${match.venue || ''}  •  ${Utils.formatDate(match.date)}`, size: 18, color: '777777', font: 'Arial' })
-        ]
-      })
-    );
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const W = doc.internal.pageSize.getWidth();
+    let y = 15;
 
+    const purple = [108, 92, 231];
+    const dark = [15, 15, 26];
+    const white = [255, 255, 255];
+    const green = [0, 230, 118];
+    const gray = [120, 120, 140];
+
+    // ── Header ──
+    doc.setFillColor(...purple);
+    doc.rect(0, 0, W, 30, 'F');
+    doc.setTextColor(...white);
+    doc.setFontSize(20); doc.setFont('helvetica', 'bold');
+    doc.text('SAI-CRICK PRO', W / 2, 12, { align: 'center' });
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+    doc.text('by D. Sai Kiran Varma', W / 2, 19, { align: 'center' });
+    doc.setFontSize(10); doc.setFont('helvetica', 'bold');
+    doc.text('MATCH SCORECARD', W / 2, 26, { align: 'center' });
+    y = 38;
+
+    // ── Match Info ──
+    doc.setTextColor(30, 30, 50);
+    doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+    doc.text(`${t1Name}  vs  ${t2Name}`, W / 2, y, { align: 'center' }); y += 7;
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...gray);
+    const infoLine = `${match.format || 'T20'}  •  ${match.venue || 'N/A'}  •  ${Utils.formatDate(match.date)}`;
+    doc.text(infoLine, W / 2, y, { align: 'center' }); y += 5;
     if (match.result) {
-      sections.push(
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 200 },
-          children: [
-            new TextRun({ text: match.result, bold: true, size: 22, color: '00a844', font: 'Arial' })
-          ]
-        })
-      );
+      doc.setFontSize(10); doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...green);
+      doc.text(match.result, W / 2, y, { align: 'center' }); y += 5;
     }
 
-    // Each innings
+    // Roles (Captain, VC, WK) helper
+    const getRoleLabel = (matchData, teamNum, pid) => {
+      const labels = [];
+      if (matchData[`team${teamNum}Captain`] === pid) labels.push('(C)');
+      if (matchData[`team${teamNum}VC`] === pid) labels.push('(VC)');
+      if (matchData[`team${teamNum}WK`] === pid) labels.push('(WK)');
+      return labels.join(' ');
+    };
+    // Determine which team is 1 or 2
+    const getTeamNum = (teamId) => teamId === match.team1Id ? 1 : 2;
+
+    // ── Each Innings ──
     for (const inn of innings) {
+      y += 4;
       const battingTeam = inn.battingTeamId === match.team1Id ? team1 : team2;
       const bowlingTeam = inn.bowlingTeamId === match.team1Id ? team1 : team2;
       const innBalls = allBalls.filter(b => b.inningsId === inn.id);
+      const teamNum = getTeamNum(inn.battingTeamId);
 
       // Innings header
-      sections.push(
-        new Paragraph({
-          spacing: { before: 300, after: 100 },
-          children: [
-            new TextRun({
-              text: `${battingTeam?.name || 'Team'} — ${inn.inningsNumber === 1 ? '1st' : '2nd'} Innings: ${inn.totalRuns || 0}/${inn.totalWickets || 0} (${inn.totalOvers || '0.0'} ov)`,
-              bold: true, size: 22, font: 'Arial'
-            })
-          ]
-        })
+      if (y > 240) { doc.addPage(); y = 15; }
+      doc.setFillColor(...purple);
+      doc.roundedRect(10, y, W - 20, 8, 2, 2, 'F');
+      doc.setTextColor(...white);
+      doc.setFontSize(10); doc.setFont('helvetica', 'bold');
+      doc.text(
+        `${battingTeam?.name || 'Team'} — ${inn.inningsNumber === 1 ? '1st' : '2nd'} Innings: ${inn.totalRuns || 0}/${inn.totalWickets || 0} (${inn.totalOvers || '0.0'} ov)`,
+        W / 2, y + 5.5, { align: 'center' }
       );
+      y += 12;
 
-      // Batting table
+      // Build bat stats
       const battingXI = inn.battingXI || [];
       const batStats = {};
-      for (const pid of battingXI) {
-        batStats[pid] = { runs: 0, balls: 0, fours: 0, sixes: 0, howOut: 'did not bat' };
-      }
-
+      for (const pid of battingXI) batStats[pid] = { runs: 0, balls: 0, fours: 0, sixes: 0, howOut: 'did not bat' };
       for (const ball of innBalls) {
         if (batStats[ball.batsmanId]) {
-          const isLegal = !ball.extras?.type?.match(/^(wide)$/);
-          if (isLegal) batStats[ball.batsmanId].balls++;
+          const legal = !ball.extras?.type?.match(/^(wide)$/);
+          if (legal) batStats[ball.batsmanId].balls++;
           batStats[ball.batsmanId].runs += ball.batsmanRuns || 0;
           if ((ball.batsmanRuns || 0) === 4) batStats[ball.batsmanId].fours++;
           if ((ball.batsmanRuns || 0) === 6) batStats[ball.batsmanId].sixes++;
@@ -165,149 +132,113 @@ const ExportDoc = {
         }
       }
 
-      // Create batting table
-      const batHeaderRow = new TableRow({
-        tableHeader: true,
-        children: ['Batsman', 'How Out', 'R', 'B', '4s', '6s', 'SR'].map(h =>
-          new TableCell({
-            children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 16, font: 'Arial', color: 'ffffff' })] })],
-            shading: { fill: '6C5CE7', type: ShadingType.SOLID },
-            width: { size: h === 'Batsman' || h === 'How Out' ? 2500 : 800, type: WidthType.DXA }
-          })
-        )
-      });
-
-      const batRows = [batHeaderRow];
+      // Batting table
+      const batRows = [];
       for (const pid of battingXI) {
         const bs = batStats[pid];
         if (bs.howOut === 'did not bat') continue;
         const p = players[pid];
+        const role = getRoleLabel(match, teamNum, pid);
         const sr = bs.balls > 0 ? (bs.runs / bs.balls * 100).toFixed(1) : '-';
         const isNotOut = bs.howOut === 'not out';
-
-        batRows.push(new TableRow({
-          children: [
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: p?.name || '?', bold: true, size: 16, font: 'Arial' })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: bs.howOut, size: 14, color: '777777', font: 'Arial' })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${bs.runs}${isNotOut ? '*' : ''}`, bold: true, size: 16, font: 'Arial', color: bs.runs >= 50 ? '1a73e8' : '000000' })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${bs.balls}`, size: 16, font: 'Arial' })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${bs.fours}`, size: 16, font: 'Arial' })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${bs.sixes}`, size: 16, font: 'Arial' })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: sr, size: 16, font: 'Arial' })] })] })
-          ]
-        }));
+        batRows.push([
+          (p ? Utils.shortName(p.name) : '?') + (role ? ' ' + role : ''),
+          bs.howOut,
+          `${bs.runs}${isNotOut ? '*' : ''}`,
+          bs.balls, bs.fours, bs.sixes, sr
+        ]);
       }
 
-      sections.push(new Table({
-        rows: batRows,
-        width: { size: 100, type: WidthType.PERCENTAGE },
-        layout: TableLayoutType.FIXED
-      }));
+      if (y > 240) { doc.addPage(); y = 15; }
+      doc.autoTable({
+        startY: y,
+        head: [['Batsman', 'How Out', 'R', 'B', '4s', '6s', 'SR']],
+        body: batRows,
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 1.5, textColor: [30,30,50] },
+        headStyles: { fillColor: [40, 40, 70], textColor: white, fontStyle: 'bold', fontSize: 8 },
+        columnStyles: {
+          0: { cellWidth: 38 }, 1: { cellWidth: 45 },
+          2: { cellWidth: 12, fontStyle: 'bold' },
+          3: { cellWidth: 12 }, 4: { cellWidth: 12 }, 5: { cellWidth: 12 }, 6: { cellWidth: 18 }
+        },
+        margin: { left: 10, right: 10 },
+        didDrawPage: (d) => { y = d.cursor.y; }
+      });
+      y = doc.lastAutoTable.finalY + 2;
 
       // Extras
       const ext = inn.extras || {};
-      const totalExtras = (ext.wides || 0) + (ext.noballs || 0) + (ext.byes || 0) + (ext.legbyes || 0);
-      sections.push(
-        new Paragraph({
-          spacing: { before: 100 },
-          children: [
-            new TextRun({ text: `Extras: ${totalExtras}  `, bold: true, size: 16, font: 'Arial' }),
-            new TextRun({ text: `(Wd ${ext.wides || 0}, Nb ${ext.noballs || 0}, B ${ext.byes || 0}, Lb ${ext.legbyes || 0})`, size: 14, color: '777777', font: 'Arial' })
-          ]
-        })
-      );
+      const totalExt = (ext.wides||0)+(ext.noballs||0)+(ext.byes||0)+(ext.legbyes||0);
+      doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(...gray);
+      doc.text(`Extras: ${totalExt}  (Wd ${ext.wides||0}, Nb ${ext.noballs||0}, B ${ext.byes||0}, Lb ${ext.legbyes||0})`, 12, y + 4);
+      y += 8;
 
-      // Bowling table
+      // Build bowl stats
+      const bowlingXI = inn.bowlingXI || [];
       const bowlData = {};
       for (const ball of innBalls) {
-        if (!bowlData[ball.bowlerId]) bowlData[ball.bowlerId] = { balls: 0, runs: 0, wickets: 0, dots: 0 };
-        const isLegal = !ball.extras?.type?.match(/^(wide|noball)$/);
-        if (isLegal) bowlData[ball.bowlerId].balls++;
+        if (!bowlData[ball.bowlerId]) bowlData[ball.bowlerId] = { balls: 0, runs: 0, wickets: 0, dots: 0, maidens: 0 };
+        const legal = !ball.extras?.type?.match(/^(wide|noball)$/);
+        if (legal) bowlData[ball.bowlerId].balls++;
         const r = (ball.extras?.type === 'bye' || ball.extras?.type === 'legbye') ? 0 : (ball.totalRuns || 0);
         bowlData[ball.bowlerId].runs += r;
-        if (r === 0 && isLegal) bowlData[ball.bowlerId].dots++;
-        if (ball.isWicket && !['runout', 'retired', 'obstructing'].includes(ball.wicketType)) {
-          bowlData[ball.bowlerId].wickets++;
-        }
+        if (r === 0 && legal) bowlData[ball.bowlerId].dots++;
+        if (ball.isWicket && !['runout','retired','obstructing'].includes(ball.wicketType)) bowlData[ball.bowlerId].wickets++;
       }
 
-      sections.push(
-        new Paragraph({
-          spacing: { before: 200, after: 50 },
-          children: [new TextRun({ text: 'Bowling', bold: true, size: 20, font: 'Arial' })]
-        })
-      );
-
-      const bowlHeaderRow = new TableRow({
-        tableHeader: true,
-        children: ['Bowler', 'O', 'R', 'W', 'Econ', 'Dots'].map(h =>
-          new TableCell({
-            children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 16, font: 'Arial', color: 'ffffff' })] })],
-            shading: { fill: '162240', type: ShadingType.SOLID },
-            width: { size: h === 'Bowler' ? 3000 : 1000, type: WidthType.DXA }
-          })
-        )
-      });
-
-      const bowlRows = [bowlHeaderRow];
-      const bowlingXI = inn.bowlingXI || [];
+      const bowlTeamNum = getTeamNum(inn.bowlingTeamId);
+      const bowlRows = [];
       for (const pid of bowlingXI) {
         const bd = bowlData[pid];
         if (!bd) continue;
         const p = players[pid];
+        const role = getRoleLabel(match, bowlTeamNum, pid);
         const ov = Utils.ballsToOvers(bd.balls);
         const econ = bd.balls > 0 ? (bd.runs / bd.balls * 6).toFixed(1) : '-';
-
-        bowlRows.push(new TableRow({
-          children: [
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: p?.name || '?', bold: true, size: 16, font: 'Arial' })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ov.display, size: 16, font: 'Arial' })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${bd.runs}`, size: 16, font: 'Arial' })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${bd.wickets}`, bold: bd.wickets >= 3, size: 16, font: 'Arial', color: bd.wickets >= 3 ? '1a73e8' : '000000' })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: econ, size: 16, font: 'Arial' })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${bd.dots}`, size: 16, font: 'Arial' })] })] })
-          ]
-        }));
+        bowlRows.push([(p ? Utils.shortName(p.name) : '?') + (role ? ' ' + role : ''), ov.display, bd.runs, bd.wickets, econ, bd.dots]);
       }
 
-      if (bowlRows.length > 1) {
-        sections.push(new Table({
-          rows: bowlRows,
-          width: { size: 100, type: WidthType.PERCENTAGE },
-          layout: TableLayoutType.FIXED
-        }));
+      if (y > 240) { doc.addPage(); y = 15; }
+      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 30, 50);
+      doc.text('Bowling', 12, y); y += 2;
+      doc.autoTable({
+        startY: y,
+        head: [['Bowler', 'O', 'R', 'W', 'Econ', 'Dots']],
+        body: bowlRows,
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 1.5, textColor: [30,30,50] },
+        headStyles: { fillColor: [40, 40, 70], textColor: white, fontStyle: 'bold', fontSize: 8 },
+        columnStyles: { 0: { cellWidth: 50 } },
+        margin: { left: 10, right: 10 }
+      });
+      y = doc.lastAutoTable.finalY + 4;
+    }
+
+    // ── Footer ──
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFillColor(...purple);
+      doc.rect(0, doc.internal.pageSize.getHeight() - 10, W, 10, 'F');
+      doc.setTextColor(...white);
+      doc.setFontSize(7); doc.setFont('helvetica', 'italic');
+      doc.text('Generated by Sai-Crick Pro  •  Made with ❤ by D. Sai Kiran Varma  •  Enjoy Free Cricket!', W / 2, doc.internal.pageSize.getHeight() - 3.5, { align: 'center' });
+      doc.text(`Page ${i}/${pageCount}`, W - 12, doc.internal.pageSize.getHeight() - 3.5);
+    }
+
+    const filename = `${t1Name}_vs_${t2Name}_${Utils.formatDate(match.date)}.pdf`.replace(/\s+/g, '_');
+
+    if (share && navigator.share) {
+      const pdfBlob = doc.output('blob');
+      const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ title: `${t1Name} vs ${t2Name} Scorecard`, files: [file] });
+        return filename;
       }
     }
 
-    // Footer
-    sections.push(
-      new Paragraph({ spacing: { before: 400 }, children: [] }),
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        children: [
-          new TextRun({ text: '───────────────────────────────────', color: 'cccccc', size: 14, font: 'Arial' })
-        ]
-      }),
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { before: 50 },
-        children: [
-          new TextRun({ text: 'Generated by SuperCrick Pro', size: 16, color: '6C5CE7', bold: true, font: 'Arial' })
-        ]
-      }),
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        children: [
-          new TextRun({ text: 'Made by Sai Kiran', size: 14, color: '999999', font: 'Arial' })
-        ]
-      })
-    );
-
-    return new Document({
-      sections: [{
-        properties: {},
-        children: sections
-      }]
-    });
+    doc.save(filename);
+    return filename;
   }
 };

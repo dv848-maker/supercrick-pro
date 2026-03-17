@@ -28,8 +28,13 @@ const Match = {
     document.getElementById('match-date').value = Match._matchData.date;
     document.getElementById('team1-selector').style.display = 'block';
     document.getElementById('team1-info').style.display = 'none';
+    document.getElementById('team1-info').innerHTML = '';
     document.getElementById('team2-selector').style.display = 'block';
     document.getElementById('team2-info').style.display = 'none';
+    document.getElementById('team2-info').innerHTML = '';
+    // Reset solo batting toggle
+    const soloToggle = document.getElementById('xi-solo-batting');
+    if (soloToggle) soloToggle.checked = false;
 
     // Format button handlers
     document.querySelectorAll('.format-btn').forEach(btn => {

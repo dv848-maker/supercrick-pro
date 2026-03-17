@@ -3,31 +3,22 @@ const App = {
   currentScreen: 'home',
   screenHistory: [],
   _playerMap: {},
-  _appMode: 'offline',
 
   async init() {
-    // Check if mode already selected
-    const savedMode = localStorage.getItem('sc_mode');
-    if (savedMode) {
-      App._appMode = savedMode;
-      document.getElementById('mode-selector').classList.add('hidden');
-      document.getElementById('splash-screen').style.display = 'flex';
-      await App._startApp();
-    }
-    // else: mode-selector is shown, waiting for user choice
-  },
-
-  selectMode(mode, el) {
-    App._appMode = mode;
-    document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
-  },
-
-  async confirmMode() {
-    localStorage.setItem('sc_mode', App._appMode);
-    document.getElementById('mode-selector').classList.add('hidden');
+    // Auto-start, no mode selector needed
     document.getElementById('splash-screen').style.display = 'flex';
     await App._startApp();
+    // Listen for connectivity changes
+    window.addEventListener('online', () => App._updateNetworkBadge(true));
+    window.addEventListener('offline', () => App._updateNetworkBadge(false));
+    App._updateNetworkBadge(navigator.onLine);
+  },
+
+  _updateNetworkBadge(isOnline) {
+    const badge = document.getElementById('network-badge');
+    if (!badge) return;
+    badge.textContent = isOnline ? '● Online' : '● Offline';
+    badge.style.color = isOnline ? '#00e676' : '#ff7675';
   },
 
   async _startApp() {
@@ -166,10 +157,12 @@ const App = {
   },
 
   _initSettings() {
-    const toggle = document.getElementById('setting-mode-toggle');
-    const label = document.getElementById('current-mode-label');
-    if (toggle) toggle.checked = App._appMode === 'online';
-    if (label) label.textContent = App._appMode === 'online' ? 'Online' : 'Offline';
+    // Update network badge in settings
+    const badge = document.getElementById('settings-online-badge');
+    if (badge) {
+      badge.textContent = navigator.onLine ? '● Online' : '● Offline';
+      badge.style.color = navigator.onLine ? '#00e676' : '#ff7675';
+    }
   },
 
   goBack() {
@@ -249,10 +242,13 @@ const App = {
       : `<span class="match-date">${Utils.formatDateShort(m.date)}</span>`;
 
     return `
-      <div class="match-card" onclick="App.openMatch(${m.id})">
+      <div class="match-card" onclick="App.openMatch(${m.id})" oncontextmenu="App.matchLongPress(event,${m.id})">
         <div class="match-card-header">
           <span class="match-format">${m.format || 'T20'}</span>
           ${statusHtml}
+          <button class="match-more-btn icon-btn" onclick="event.stopPropagation();App.showMatchOptions(${m.id})" style="margin-left:auto">
+            <span class="material-icons-round" style="font-size:18px">more_vert</span>
+          </button>
         </div>
         <div class="match-card-teams">
           <div class="match-team-row">
@@ -268,6 +264,35 @@ const App = {
         ${m.venue ? `<div class="match-venue">${m.venue}</div>` : ''}
       </div>
     `;
+  },
+
+  matchLongPress(event, matchId) {
+    event.preventDefault();
+    App.showMatchOptions(matchId);
+  },
+
+  async showMatchOptions(matchId) {
+    const ok = await Utils.confirm('Match Options', 'Delete this match and all its data?');
+    if (ok) await App.deleteMatch(matchId);
+  },
+
+  async deleteMatch(matchId) {
+    try {
+      // Delete all balls and innings for this match
+      const innings = await DB.getMatchInnings(matchId);
+      for (const inn of innings) {
+        const balls = await DB.getInningsBalls(inn.id);
+        for (const b of balls) await DB.deleteBall(b.id);
+        await db.innings.delete(inn.id);
+      }
+      await db.matches.delete(matchId);
+      Utils.toast('Match deleted');
+      await App.loadHome();
+      await App.loadMatches();
+      await App.checkLiveMatch();
+    } catch(e) {
+      Utils.toast('Delete failed: ' + e.message);
+    }
   },
 
   async loadMatches(filter = 'all') {
@@ -387,6 +412,11 @@ const App = {
     event.target.value = '';
   },
 
+  switchMode(isOnline) {
+    // Not used - mode is auto-detected
+    Utils.toast(isOnline ? 'Switched to Online mode' : 'Switched to Offline mode');
+  },
+
   async clearAllData() {
     const ok = await Utils.confirm('Clear All Data', 'This will permanently delete all matches, players, and teams. This cannot be undone!');
     if (!ok) return;
@@ -394,15 +424,6 @@ const App = {
     App._playerMap = {};
     Utils.toast('All data cleared');
     App.navigate('home', { force: true });
-  },
-
-  // Mode toggle
-  switchMode(mode) {
-    App._appMode = mode;
-    localStorage.setItem('sc_mode', mode);
-    const label = document.getElementById('current-mode-label');
-    if (label) label.textContent = mode === 'online' ? 'Online' : 'Offline';
-    Utils.toast(`Switched to ${mode === 'online' ? 'Online' : 'Offline'} Mode`);
   },
 
   // Weather

@@ -191,8 +191,7 @@ const Scoring = {
 
     Scoring._selectedOpeners = [];
     document.getElementById('select-batsman-modal').classList.remove('hidden');
-    document.getElementById('select-batsman-modal').querySelector('h3').textContent =
-      isGully ? 'Select Batsmen (1 or 2)' : 'Select Opening Batsmen (2)';
+    document.getElementById('select-batsman-modal').querySelector('h3').textContent = 'Select Opening Batsmen (1 or 2)';
   },
 
   _selectedOpeners: [],
@@ -214,16 +213,19 @@ const Scoring = {
   },
 
   async confirmNewBatsman() {
-    const isGully = Scoring.match?.isGully || false;
     if (!Scoring.strikerId && !Scoring.nonStrikerId) {
-      // Selecting openers — allow 1 for gully cricket
-      const minOpeners = isGully ? 1 : 2;
-      if (Scoring._selectedOpeners.length < minOpeners) {
-        Utils.toast(`Select at least ${minOpeners} batsmen`);
+      // Selecting openers — allow 1 or 2 batsmen always
+      if (Scoring._selectedOpeners.length < 1) {
+        Utils.toast('Select at least 1 batsman');
         return;
       }
       Scoring.strikerId = Scoring._selectedOpeners[0];
       Scoring.nonStrikerId = Scoring._selectedOpeners[1] || null; // null = solo batting
+      if (!Scoring.nonStrikerId) {
+        // Auto-enable solo/gully mode if only 1 selected
+        if (Scoring.match) Scoring.match.isGully = true;
+        Utils.toast('Solo batting mode activated');
+      }
       document.getElementById('select-batsman-modal').classList.add('hidden');
       Scoring._updateBatsmanPanel();
 
