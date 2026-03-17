@@ -3,6 +3,7 @@ const App = {
   currentScreen: 'home',
   screenHistory: [],
   _playerMap: {},
+  _deferredInstallPrompt: null,
 
   async init() {
     // Auto-start, no mode selector needed
@@ -21,6 +22,58 @@ const App = {
     document.querySelectorAll('.modal').forEach(m => {
       obs.observe(m, { attributes: true, attributeFilter: ['class'] });
     });
+
+    // ── Install Prompt (Android Chrome) ──
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      App._deferredInstallPrompt = e;
+      // Show install banner if not dismissed before
+      if (!localStorage.getItem('scp_install_dismissed')) {
+        setTimeout(() => App._showInstallBanner('android'), 2000);
+      }
+    });
+
+    // ── Install Prompt (iOS Safari) ──
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    if (isIOS && !isStandalone && !localStorage.getItem('scp_install_dismissed')) {
+      setTimeout(() => App._showInstallBanner('ios'), 2500);
+    }
+  },
+
+  _showInstallBanner(platform) {
+    const banner = document.getElementById('install-banner');
+    const hint = document.getElementById('install-banner-hint');
+    const btn = document.getElementById('install-banner-btn');
+
+    if (platform === 'ios') {
+      hint.textContent = 'Tap Share ⎋ then "Add to Home Screen"';
+      btn.textContent = 'Got it';
+      btn.onclick = () => App.dismissInstall();
+    } else {
+      hint.textContent = 'Add to home screen for the best experience!';
+      btn.textContent = 'Install';
+      btn.onclick = () => App.installApp();
+    }
+    banner.classList.remove('hidden');
+  },
+
+  async installApp() {
+    const banner = document.getElementById('install-banner');
+    if (App._deferredInstallPrompt) {
+      App._deferredInstallPrompt.prompt();
+      const result = await App._deferredInstallPrompt.userChoice;
+      if (result.outcome === 'accepted') {
+        Utils.toast('App installed! Find it on your home screen');
+      }
+      App._deferredInstallPrompt = null;
+    }
+    banner.classList.add('hidden');
+  },
+
+  dismissInstall() {
+    document.getElementById('install-banner').classList.add('hidden');
+    localStorage.setItem('scp_install_dismissed', '1');
   },
 
   _updateNetworkBadge(isOnline) {
