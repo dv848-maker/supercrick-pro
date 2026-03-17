@@ -421,7 +421,7 @@ html, body {
 .team-select-card .team-details p { font-size: 12px; color: var(--text-muted); }
 
 /* Player select list */
-.player-select-list { display: flex; flex-direction: column; gap: 6px; max-height: 350px; overflow-y: auto; }
+.player-select-list { display: flex; flex-direction: column; gap: 6px; }
 .player-select-item {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 12px; background: var(--bg-surface);
@@ -581,16 +581,22 @@ html, body {
 .modal-content {
   width: 100%; max-width: 480px;
   background: var(--bg-card); border-radius: var(--radius) var(--radius) 0 0;
-  max-height: 85vh; overflow-y: auto; animation: slide-up 0.3s;
+  max-height: 85vh; display: flex; flex-direction: column;
+  animation: slide-up 0.3s;
 }
 .modal-content.full-height { max-height: 92vh; }
 .modal-header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 16px; border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; background: var(--bg-card); z-index: 1;
+  background: var(--bg-card); z-index: 1; flex-shrink: 0;
 }
 .modal-header h3 { font-size: 18px; font-weight: 700; }
-.modal-body { padding: 16px; }
+.modal-body {
+  padding: 16px; overflow-y: auto; flex: 1;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-bottom: calc(16px + var(--safe-bottom));
+}
 
 @keyframes fade-in { from { opacity: 0; } }
 @keyframes slide-up { from { transform: translateY(100%); } }
@@ -1110,3 +1116,49 @@ html, body {
 .standings-top td:first-child::before { content: '🏆 '; }
 
 .btn-small-action.danger { color: var(--danger); border-color: var(--danger); }
+
+/* ═══════════════════════════════════════
+   MOBILE PERFORMANCE & TOUCH FIXES
+═══════════════════════════════════════ */
+/* Hardware acceleration for animations */
+.modal-content, .coin, .splash-ball, .splash-bat, .loader-bar {
+  will-change: transform;
+}
+
+/* Ensure buttons inside modals are always reachable */
+.modal-body .btn-primary,
+.modal-body .btn-secondary {
+  flex-shrink: 0;
+  margin-top: 12px;
+}
+
+/* Fix iOS input zoom — keep font at 16px minimum */
+.modal-body input[type="text"],
+.modal-body input[type="number"],
+.modal-body input[type="date"],
+.modal-body select {
+  font-size: 16px;
+}
+
+/* Smooth touch interactions */
+button, .action-card, .match-card, .player-card, .team-select-card, .player-select-item {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* Better scrollbar for modal on mobile */
+.modal-body::-webkit-scrollbar { width: 3px; }
+.modal-body::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 3px; }
+
+/* Safe area padding for bottom-sheet modals on notched phones */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .modal-body { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+  .bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
+  .scoring-controls { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+}
