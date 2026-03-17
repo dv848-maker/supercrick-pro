@@ -6,8 +6,8 @@
   "start_url": "./index.html",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
-  "background_color": "#0F0F1A",
-  "theme_color": "#6C5CE7",
+  "background_color": "#F5F0EB",
+  "theme_color": "#8B1A2B",
   "orientation": "portrait-primary",
   "icons": [
     {
