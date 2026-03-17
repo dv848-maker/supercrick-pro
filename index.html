@@ -292,8 +292,13 @@
                 <label>Team Name</label>
                 <input type="text" id="new-team-name" placeholder="Enter team name">
               </div>
+              <!-- Pick from saved players -->
               <div class="form-group">
-                <label>Add Players</label>
+                <label>Pick Saved Players</label>
+                <div id="saved-players-pick" class="player-select-list" style="max-height:180px;overflow-y:auto;margin-bottom:8px"></div>
+              </div>
+              <div class="form-group">
+                <label>Or Add New Player</label>
                 <div class="player-add-row">
                   <input type="text" id="quick-player-name" placeholder="Player name">
                   <select id="quick-player-role">
@@ -335,9 +340,20 @@
               <label class="toggle"><input type="checkbox" id="xi-solo-batting"><span class="slider"></span></label>
             </div>
             <div id="playing-xi-list" class="player-select-list"></div>
+            <!-- Pick from saved players DB -->
             <div class="form-group" style="margin-top:12px;">
+              <label>Add Saved Player</label>
               <div class="player-add-row">
-                <input type="text" id="xi-add-name" placeholder="Add new player">
+                <select id="xi-saved-player" style="flex:1"></select>
+                <button class="icon-btn accent" onclick="Match.addSavedPlayerToXI()">
+                  <span class="material-icons-round">person_add</span>
+                </button>
+              </div>
+            </div>
+            <div class="form-group" style="margin-top:8px;">
+              <label>Or Add New Player</label>
+              <div class="player-add-row">
+                <input type="text" id="xi-add-name" placeholder="Player name">
                 <select id="xi-add-role">
                   <option value="batsman">Bat</option>
                   <option value="bowler">Bowl</option>

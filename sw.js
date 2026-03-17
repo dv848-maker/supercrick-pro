@@ -1,5 +1,5 @@
-// Sai-Crick Pro — Service Worker v4
-const CACHE_NAME = 'sai-crick-pro-v4';
+// Sai-Crick Pro — Service Worker v5
+const CACHE_NAME = 'sai-crick-pro-v5';
 const ASSETS = [
   './index.html','./css/app.css','./css/scoring.css','./css/field.css','./css/components.css',
   './js/app.js','./js/db.js','./js/scoring.js','./js/scorecard.js','./js/field-positions.js',
