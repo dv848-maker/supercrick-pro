@@ -156,6 +156,40 @@ const Match = {
 
     document.getElementById('tab-existing-teams').classList.toggle('active', tab === 'existing');
     document.getElementById('tab-create-team').classList.toggle('active', tab === 'create');
+
+    // Load saved players when switching to Create tab
+    if (tab === 'create') Match._loadSavedPlayersForPick();
+  },
+
+  _savedPickedIds: [],
+
+  async _loadSavedPlayersForPick() {
+    Match._savedPickedIds = [];
+    const allPlayers = await DB.getAllPlayers();
+    const container = document.getElementById('saved-players-pick');
+    if (allPlayers.length === 0) {
+      container.innerHTML = '<p class="hint-text">No saved players. Add new players below.</p>';
+      return;
+    }
+    container.innerHTML = allPlayers.map(p => `
+      <div class="player-select-item" data-spid="${p.id}" onclick="Match.toggleSavedPick(${p.id}, this)">
+        <div class="ps-avatar">${Utils.initials(p.name)}</div>
+        <span class="ps-name">${p.name}</span>
+        <span class="ps-role">${Utils.roleDisplay(p.role)}</span>
+        <span class="ps-check material-icons-round">check_circle</span>
+      </div>
+    `).join('');
+  },
+
+  toggleSavedPick(playerId, el) {
+    const idx = Match._savedPickedIds.indexOf(playerId);
+    if (idx >= 0) {
+      Match._savedPickedIds.splice(idx, 1);
+      el.classList.remove('selected');
+    } else {
+      Match._savedPickedIds.push(playerId);
+      el.classList.add('selected');
+    }
   },
 
   closeTeamBuilder() {
@@ -191,10 +225,14 @@ const Match = {
   async createTeam() {
     const name = document.getElementById('new-team-name').value.trim();
     if (!name) { Utils.toast('Enter team name'); return; }
-    if (Match._newTeamPlayers.length < 2) { Utils.toast('Add at least 2 players'); return; }
 
-    // Create players in DB
-    const playerIds = [];
+    const totalPlayers = Match._newTeamPlayers.length + Match._savedPickedIds.length;
+    if (totalPlayers < 2) { Utils.toast('Add at least 2 players'); return; }
+
+    // Start with saved/picked player IDs
+    const playerIds = [...Match._savedPickedIds];
+
+    // Create new players in DB
     for (const p of Match._newTeamPlayers) {
       const id = await DB.addPlayer({
         name: p.name, role: p.role, battingStyle: 'right',
@@ -209,13 +247,13 @@ const Match = {
       name, players: playerIds, logo: ''
     });
 
-    // Update players with teamId
+    // Update all players with teamId
     for (const pid of playerIds) {
-      await DB.updatePlayer(pid, { teamId });
+      await DB.updatePlayer(pid, { teamId, teamName: name });
     }
 
     await App.refreshPlayerMap();
-    Utils.toast(`Team "${name}" created`);
+    Utils.toast(`Team "${name}" created with ${playerIds.length} players`);
 
     // Auto-select this team with all players as XI
     Match._assignTeam(teamId, name, playerIds);
@@ -272,7 +310,63 @@ const Match = {
     }
 
     document.getElementById('xi-count-num').textContent = Match._selectedXI.length;
+
+    // Populate saved players dropdown (exclude already listed players)
+    await Match._loadSavedPlayerDropdown(players.map(p => p.id));
+
     document.getElementById('playing-xi-modal').classList.remove('hidden');
+  },
+
+  async _loadSavedPlayerDropdown(excludeIds) {
+    const allPlayers = await DB.getAllPlayers();
+    const sel = document.getElementById('xi-saved-player');
+    const available = allPlayers.filter(p => !excludeIds.includes(p.id));
+    if (available.length === 0) {
+      sel.innerHTML = '<option value="">No other saved players</option>';
+    } else {
+      sel.innerHTML = '<option value="">— Pick saved player —</option>' +
+        available.map(p => `<option value="${p.id}">${p.name} (${Utils.roleDisplay(p.role)})</option>`).join('');
+    }
+  },
+
+  async addSavedPlayerToXI() {
+    const sel = document.getElementById('xi-saved-player');
+    const pid = Number(sel.value);
+    if (!pid) { Utils.toast('Select a player'); return; }
+
+    const p = await DB.getPlayer(pid);
+    if (!p) return;
+
+    // Add to team roster if not already
+    const teamId = Match._selectedTeamId;
+    const team = await DB.getTeam(teamId);
+    if (team) {
+      const players = team.players || [];
+      if (!players.includes(pid)) {
+        players.push(pid);
+        await DB.updateTeam(teamId, { players });
+      }
+    }
+
+    await App.refreshPlayerMap();
+
+    // Add to list UI
+    const listEl = document.getElementById('playing-xi-list');
+    listEl.innerHTML += `
+      <div class="player-select-item selected" data-pid="${pid}" onclick="Match.toggleXIPlayer(${pid}, this)">
+        <div class="ps-avatar">${Utils.initials(p.name)}</div>
+        <span class="ps-name">${p.name}</span>
+        <span class="ps-role">${Utils.roleDisplay(p.role)}</span>
+        <span class="ps-check material-icons-round">check_circle</span>
+      </div>
+    `;
+    Match._selectedXI.push(pid);
+    document.getElementById('xi-count-num').textContent = Match._selectedXI.length;
+
+    // Remove from dropdown
+    sel.querySelector(`option[value="${pid}"]`)?.remove();
+    sel.value = '';
+    Utils.toast(`${p.name} added`);
   },
 
   toggleXIPlayer(playerId, el) {
