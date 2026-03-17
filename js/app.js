@@ -23,21 +23,40 @@ const App = {
       obs.observe(m, { attributes: true, attributeFilter: ['class'] });
     });
 
+    // ── Check if already installed as PWA ──
+    const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isAndroid = /android/i.test(navigator.userAgent);
+
     // ── Install Prompt (Android Chrome) ──
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       App._deferredInstallPrompt = e;
-      // Show install banner if not dismissed before
-      if (!localStorage.getItem('scp_install_dismissed')) {
+      // Show install banner (uses sessionStorage so it shows each fresh visit)
+      if (!sessionStorage.getItem('scp_install_dismissed')) {
         setTimeout(() => App._showInstallBanner('android'), 2000);
       }
     });
 
-    // ── Install Prompt (iOS Safari) ──
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-    if (isIOS && !isStandalone && !localStorage.getItem('scp_install_dismissed')) {
+    // ── Listen for successful install ──
+    window.addEventListener('appinstalled', () => {
+      Utils.toast('App installed successfully!');
+      App._deferredInstallPrompt = null;
+      document.getElementById('install-banner')?.classList.add('hidden');
+    });
+
+    // ── iOS Safari: show Add to Home Screen instructions ──
+    if (isIOS && !isStandalone && !sessionStorage.getItem('scp_install_dismissed')) {
       setTimeout(() => App._showInstallBanner('ios'), 2500);
+    }
+
+    // ── Android: if no beforeinstallprompt fires within 4s, show manual instructions ──
+    if (isAndroid && !isStandalone && !sessionStorage.getItem('scp_install_dismissed')) {
+      setTimeout(() => {
+        if (!App._deferredInstallPrompt) {
+          App._showInstallBanner('android-manual');
+        }
+      }, 4000);
     }
   },
 
@@ -45,9 +64,14 @@ const App = {
     const banner = document.getElementById('install-banner');
     const hint = document.getElementById('install-banner-hint');
     const btn = document.getElementById('install-banner-btn');
+    if (!banner || !hint || !btn) return;
 
     if (platform === 'ios') {
-      hint.textContent = 'Tap Share ⎋ then "Add to Home Screen"';
+      hint.innerHTML = 'Tap <b>Share</b> ⎋ → <b>"Add to Home Screen"</b>';
+      btn.textContent = 'Got it';
+      btn.onclick = () => App.dismissInstall();
+    } else if (platform === 'android-manual') {
+      hint.innerHTML = 'Tap <b>⋮ Menu</b> → <b>"Add to Home screen"</b> or <b>"Install app"</b>';
       btn.textContent = 'Got it';
       btn.onclick = () => App.dismissInstall();
     } else {
@@ -72,8 +96,8 @@ const App = {
   },
 
   dismissInstall() {
-    document.getElementById('install-banner').classList.add('hidden');
-    localStorage.setItem('scp_install_dismissed', '1');
+    document.getElementById('install-banner')?.classList.add('hidden');
+    sessionStorage.setItem('scp_install_dismissed', '1');
   },
 
   _updateNetworkBadge(isOnline) {
