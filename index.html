@@ -1102,22 +1102,48 @@
 
   <script>
     if ('serviceWorker' in navigator) {
+      let refreshing = false;
+
+      // Auto-reload when new SW takes control
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
+
       navigator.serviceWorker.register('./sw.js').then(reg => {
+        // Check for updates immediately on every page load
+        reg.update().catch(() => {});
+
+        // Also check for updates every 60 seconds while app is open
+        setInterval(() => reg.update().catch(() => {}), 60000);
+
         reg.addEventListener('updatefound', () => {
           const newWorker = reg.installing;
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                document.getElementById('update-banner')?.classList.remove('hidden');
+              if (newWorker.state === 'installed') {
+                if (navigator.serviceWorker.controller) {
+                  // New version ready — show banner briefly then auto-update
+                  const banner = document.getElementById('update-banner');
+                  if (banner) banner.classList.remove('hidden');
+                  // Tell new SW to skip waiting and take over
+                  newWorker.postMessage({ type: 'SKIP_WAITING' });
+                }
               }
             });
           }
         });
       }).catch(() => {});
+
       navigator.serviceWorker.addEventListener('message', e => {
         if (e.data?.type === 'APP_UPDATED') {
-          const banner = document.getElementById('update-banner');
-          if (banner) banner.classList.remove('hidden');
+          // Force reload to get latest assets
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
         }
       });
     }

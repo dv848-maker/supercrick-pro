@@ -1,5 +1,5 @@
-// Sai-Crick Pro — Service Worker v8 (Network-First)
-const CACHE_NAME = 'sai-crick-pro-v8';
+// Sai-Crick Pro — Service Worker v9 (Network-First + Auto-Update)
+const CACHE_NAME = 'sai-crick-pro-v9';
 const ASSETS = [
   './index.html','./css/app.css','./css/scoring.css','./css/field.css','./css/components.css',
   './js/app.js','./js/db.js','./js/scoring.js','./js/scorecard.js','./js/field-positions.js',
@@ -22,6 +22,13 @@ self.addEventListener('activate', e => {
   );
   self.clients.claim();
 });
+// Listen for skip waiting message from the page
+self.addEventListener('message', e => {
+  if (e.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
