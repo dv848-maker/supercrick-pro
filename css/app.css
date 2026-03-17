@@ -595,7 +595,7 @@ html, body {
   padding: 16px; overflow-y: auto; flex: 1;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  padding-bottom: calc(16px + var(--safe-bottom));
+  padding-bottom: calc(32px + var(--safe-bottom));
 }
 
 @keyframes fade-in { from { opacity: 0; } }
@@ -1130,6 +1130,14 @@ html, body {
 .modal-body .btn-secondary {
   flex-shrink: 0;
   margin-top: 12px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Extra space after last button so it's fully visible when scrolled */
+.modal-body .btn-primary:last-child,
+.modal-body .btn-secondary:last-child {
+  margin-bottom: 16px;
 }
 
 /* Fix iOS input zoom — keep font at 16px minimum */
