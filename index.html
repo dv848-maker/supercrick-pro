@@ -1064,6 +1064,19 @@
 
     <!-- Toast -->
     <div id="toast" class="toast hidden"></div>
+
+    <!-- Install Prompt Banner -->
+    <div id="install-banner" class="install-banner hidden">
+      <div class="install-banner-content">
+        <span class="material-icons-round" style="font-size:28px">get_app</span>
+        <div class="install-banner-text">
+          <strong>Install Sai-Crick Pro</strong>
+          <small id="install-banner-hint">Add to home screen for the best experience!</small>
+        </div>
+        <button id="install-banner-btn" class="install-banner-action" onclick="App.installApp()">Install</button>
+        <button class="install-banner-close" onclick="App.dismissInstall()">&times;</button>
+      </div>
+    </div>
   </div>
 
   <!-- CDN Libraries -->

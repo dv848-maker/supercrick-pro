@@ -1,5 +1,5 @@
-// Sai-Crick Pro — Service Worker v5
-const CACHE_NAME = 'sai-crick-pro-v5';
+// Sai-Crick Pro — Service Worker v6 (Network-First)
+const CACHE_NAME = 'sai-crick-pro-v6';
 const ASSETS = [
   './index.html','./css/app.css','./css/scoring.css','./css/field.css','./css/components.css',
   './js/app.js','./js/db.js','./js/scoring.js','./js/scorecard.js','./js/field-positions.js',
@@ -26,20 +26,19 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
   if (url.hostname.includes('open-meteo.com') || url.hostname.includes('nominatim')) return;
-  if (e.request.destination === 'document') {
-    e.respondWith(
-      fetch(e.request).then(r => { caches.open(CACHE_NAME).then(c => c.put(e.request, r.clone())); return r; })
-        .catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
-    );
-    return;
-  }
+
+  // Network-First for ALL app assets: always fetch latest, fall back to cache offline
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(r => {
-        if (r && r.status === 200) caches.open(CACHE_NAME).then(c => c.put(e.request, r.clone()));
-        return r;
-      }).catch(() => e.request.destination === 'document' ? caches.match('./index.html') : undefined);
-    })
+    fetch(e.request).then(r => {
+      if (r && r.status === 200) {
+        const clone = r.clone();
+        caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+      }
+      return r;
+    }).catch(() =>
+      caches.match(e.request).then(cached =>
+        cached || (e.request.destination === 'document' ? caches.match('./index.html') : undefined)
+      )
+    )
   );
 });
