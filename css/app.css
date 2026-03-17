@@ -1118,6 +1118,38 @@ html, body {
 .btn-small-action.danger { color: var(--danger); border-color: var(--danger); }
 
 /* ═══════════════════════════════════════
+   INSTALL PROMPT BANNER
+═══════════════════════════════════════ */
+.install-banner {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: 900; animation: slide-up 0.4s;
+}
+.install-banner.hidden { display: none; }
+.install-banner-content {
+  display: flex; align-items: center; gap: 10px;
+  max-width: 480px; margin: 0 auto;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #6C5CE7, #00B894);
+  color: #fff;
+  border-radius: var(--radius) var(--radius) 0 0;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+}
+.install-banner-text { flex: 1; }
+.install-banner-text strong { display: block; font-size: 14px; }
+.install-banner-text small { font-size: 11px; opacity: 0.85; }
+.install-banner-action {
+  padding: 8px 20px; border: 2px solid #fff; border-radius: 24px;
+  background: rgba(255,255,255,0.15); color: #fff;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  white-space: nowrap;
+}
+.install-banner-action:active { background: rgba(255,255,255,0.3); }
+.install-banner-close {
+  background: none; border: none; color: rgba(255,255,255,0.7);
+  font-size: 22px; cursor: pointer; padding: 0 4px; line-height: 1;
+}
+
+/* ═══════════════════════════════════════
    MOBILE PERFORMANCE & TOUCH FIXES
 ═══════════════════════════════════════ */
 /* Hardware acceleration for animations */
