@@ -132,6 +132,10 @@
             <span class="material-icons-round">bar_chart</span>
             <span>Statistics</span>
           </button>
+          <button class="action-card" onclick="App.navigate('tournaments')">
+            <span class="material-icons-round">emoji_events</span>
+            <span>Tournaments</span>
+          </button>
         </div>
         <div class="section-header">
           <h3>Recent Matches</h3>
@@ -498,6 +502,7 @@
                 <button class="run-btn" data-wr="1" onclick="Scoring.setWicketRuns(1,this)">1</button>
                 <button class="run-btn" data-wr="2" onclick="Scoring.setWicketRuns(2,this)">2</button>
                 <button class="run-btn" data-wr="3" onclick="Scoring.setWicketRuns(3,this)">3</button>
+                <button class="run-btn" data-wr="4" onclick="Scoring.setWicketRuns(4,this)">4</button>
               </div>
             </div>
             <button class="btn-primary full-width" onclick="Scoring.confirmWicket()">Confirm Wicket</button>
@@ -550,6 +555,8 @@
                 <button class="run-btn" data-er="2" onclick="Scoring.setExtraRuns(2,this)">2</button>
                 <button class="run-btn" data-er="3" onclick="Scoring.setExtraRuns(3,this)">3</button>
                 <button class="run-btn" data-er="4" onclick="Scoring.setExtraRuns(4,this)">4</button>
+                <button class="run-btn" data-er="5" onclick="Scoring.setExtraRuns(5,this)">5</button>
+                <button class="run-btn" data-er="6" onclick="Scoring.setExtraRuns(6,this)">6</button>
               </div>
             </div>
             <button class="btn-primary full-width" onclick="Scoring.confirmExtra()">Confirm</button>
@@ -787,6 +794,197 @@
         </div>
       </section>
 
+      <!-- ═══ TOURNAMENTS LIST SCREEN ═══ -->
+      <section id="screen-tournaments" class="screen">
+        <div style="padding:16px">
+          <button class="btn-primary full-width" onclick="Tournament.startCreate()" style="margin-bottom:16px">
+            <span class="material-icons-round">add</span> Create New Tournament
+          </button>
+        </div>
+        <div id="tournament-list" class="match-list" style="padding:0 16px 80px"></div>
+      </section>
+
+      <!-- ═══ TOURNAMENT CREATE WIZARD ═══ -->
+      <section id="screen-tournament-create" class="screen">
+        <div class="form-container">
+          <div class="step-indicator tw-indicator">
+            <div class="step active" data-step="1">1</div>
+            <div class="step-line"></div>
+            <div class="step" data-step="2">2</div>
+            <div class="step-line"></div>
+            <div class="step" data-step="3">3</div>
+          </div>
+
+          <!-- Step 1: Details -->
+          <div id="tw-step-1" class="match-step tw-step active">
+            <h3>Tournament Details</h3>
+            <div class="form-group">
+              <label>Tournament Name</label>
+              <input type="text" id="tw-name" placeholder="e.g. Sai Kiran Cup 2025">
+            </div>
+            <div class="form-group">
+              <label>Tournament Type</label>
+              <div class="format-selector" style="flex-wrap:wrap;gap:8px">
+                <button class="tw-type-btn format-btn active" data-type="roundrobin" onclick="Tournament.setType('roundrobin',this)">Round Robin</button>
+                <button class="tw-type-btn format-btn" data-type="knockout" onclick="Tournament.setType('knockout',this)">Knockout</button>
+                <button class="tw-type-btn format-btn" data-type="groups" onclick="Tournament.setType('groups',this)">Groups+KO</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Match Format</label>
+              <select id="tw-format">
+                <option value="T20">T20 (20 overs)</option>
+                <option value="T10">T10 (10 overs)</option>
+                <option value="Gully">Gully (5 overs)</option>
+                <option value="ODI">ODI (50 overs)</option>
+                <option value="Custom">Custom</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Overs per innings</label>
+              <input type="number" id="tw-overs" value="20" min="1" max="100">
+            </div>
+            <div class="step-nav">
+              <button class="btn-secondary" onclick="App.navigate('tournaments')">Cancel</button>
+              <button class="btn-primary" onclick="Tournament.wizNext()">Next: Teams →</button>
+            </div>
+          </div>
+
+          <!-- Step 2: Teams & Schedule -->
+          <div id="tw-step-2" class="match-step tw-step">
+            <h3>Teams & Schedule</h3>
+            <div class="form-group">
+              <label>Add New Team</label>
+              <div class="player-add-row">
+                <input type="text" id="tw-team-name" placeholder="Team name">
+                <button class="icon-btn accent" onclick="Tournament.addTeamToWiz()">
+                  <span class="material-icons-round">add</span>
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Or pick existing team</label>
+              <div class="player-add-row">
+                <select id="tw-existing-team-sel" style="flex:1"></select>
+                <button class="icon-btn accent" onclick="Tournament.addExistingTeamToWiz()">
+                  <span class="material-icons-round">add</span>
+                </button>
+              </div>
+            </div>
+            <div id="tw-teams-list" style="margin-bottom:12px"></div>
+            <div id="tw-recommendation" class="hint-text" style="color:var(--accent);font-weight:600;margin-bottom:12px"></div>
+            <div class="form-group">
+              <label>Start Date</label>
+              <input type="date" id="tw-start-date">
+            </div>
+            <div class="form-group">
+              <label>Preferred Match Days</label>
+              <select id="tw-day-pref">
+                <option value="weekends">Weekends (Sat + Sun)</option>
+                <option value="sundays">Sundays only</option>
+                <option value="weekdays">Weekdays only</option>
+                <option value="any">Any day</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Match Type</label>
+              <select id="tw-match-type">
+                <option value="day">Day (10:00 AM)</option>
+                <option value="daynight">Day-Night (2:00 PM)</option>
+                <option value="night">Night (6:00 PM)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Matches per day</label>
+              <select id="tw-per-day">
+                <option value="1">1 match/day</option>
+                <option value="2">2 matches/day</option>
+                <option value="3">3 matches/day</option>
+              </select>
+            </div>
+            <div class="step-nav">
+              <button class="btn-secondary" onclick="Tournament.wizBack()">← Back</button>
+              <button class="btn-primary" onclick="Tournament.wizNext()">Generate Fixtures →</button>
+            </div>
+          </div>
+
+          <!-- Step 3: Review Fixtures -->
+          <div id="tw-step-3" class="match-step tw-step">
+            <h3>Review & Confirm</h3>
+            <div id="tw-fixture-preview" style="max-height:50vh;overflow-y:auto;margin-bottom:16px"></div>
+            <div class="step-nav">
+              <button class="btn-secondary" onclick="Tournament.wizBack()">← Back</button>
+              <button class="btn-primary" onclick="Tournament.confirmCreate()">🏆 Create Tournament!</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ TOURNAMENT DETAIL SCREEN ═══ -->
+      <section id="screen-tournament-detail" class="screen">
+        <div class="tc-detail-header">
+          <div id="td-name" class="tc-detail-name"></div>
+          <div id="td-meta" class="tc-detail-meta"></div>
+          <div class="tc-detail-actions">
+            <button class="btn-small-action" onclick="Tournament.exportPDF(null,'pre')">📄 Pre-PDF</button>
+            <button class="btn-small-action" onclick="Tournament.exportPDF(null,'post')">🏆 Results PDF</button>
+          </div>
+        </div>
+        <div class="td-tab-bar">
+          <button class="td-tab active" data-tab="fixtures" onclick="Tournament.showTab('fixtures')">Fixtures</button>
+          <button class="td-tab" data-tab="standings" onclick="Tournament.showTab('standings')">Standings</button>
+          <button class="td-tab" data-tab="teams" onclick="Tournament.showTab('teams')">Teams</button>
+        </div>
+        <div class="td-tab-content active" data-tab="fixtures">
+          <div id="td-fixtures" style="padding:12px 16px 80px"></div>
+        </div>
+        <div class="td-tab-content" data-tab="standings">
+          <div id="td-standings" style="padding:12px 16px 80px"></div>
+        </div>
+        <div class="td-tab-content" data-tab="teams">
+          <div id="td-teams" style="padding:12px 16px 80px"></div>
+        </div>
+      </section>
+
+      <!-- RECORD RESULT MODAL -->
+      <div id="record-result-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Record Result</h3>
+            <button class="icon-btn" onclick="Tournament.closeResultModal()"><span class="material-icons-round">close</span></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="rr-fixture-id">
+            <p id="rr-match-label" style="font-weight:700;text-align:center;margin-bottom:12px"></p>
+            <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:12px">
+              <div>
+                <div id="rr-home-name" style="font-weight:700;font-size:13px;margin-bottom:4px"></div>
+                <input type="text" id="rr-home-score" placeholder="e.g. 142/6 (20)" style="width:100%">
+              </div>
+              <span style="font-weight:700;color:var(--text-muted)">vs</span>
+              <div>
+                <div id="rr-away-name" style="font-weight:700;font-size:13px;margin-bottom:4px"></div>
+                <input type="text" id="rr-away-score" placeholder="e.g. 138/8 (20)" style="width:100%">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Winner</label>
+              <div class="format-selector">
+                <button class="rr-result-btn format-btn" data-result="home" onclick="Tournament.setRRResult('home',this)">Home Wins</button>
+                <button class="rr-result-btn format-btn" data-result="away" onclick="Tournament.setRRResult('away',this)">Away Wins</button>
+                <button class="rr-result-btn format-btn" data-result="tie" onclick="Tournament.setRRResult('tie',this)">Tie</button>
+                <button class="rr-result-btn format-btn" data-result="noresult" onclick="Tournament.setRRResult('noresult',this)">No Result</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Result description (optional)</label>
+              <input type="text" id="rr-result-desc" placeholder="e.g. Home team won by 4 runs">
+            </div>
+            <button class="btn-primary full-width" onclick="Tournament.confirmResult()">Save Result</button>
+          </div>
+        </div>
+      </div>
+
       <!-- CAPTAIN / VC / WK ASSIGNMENT MODAL -->
       <div id="role-assign-modal" class="modal hidden">
         <div class="modal-content">
@@ -870,6 +1068,7 @@
   <script src="js/field-positions.js"></script>
   <script src="js/stats.js"></script>
   <script src="js/search.js"></script>
+  <script src="js/tournament.js"></script>
   <script src="js/export.js"></script>
 
   <script>
