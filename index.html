@@ -25,33 +25,7 @@
   <link rel="stylesheet" href="css/field.css">
 </head>
 <body>
-  <!-- Mode Selector Overlay -->
-  <div id="mode-selector" class="mode-selector-overlay">
-    <div class="splash-cricket-anim">
-      <div class="splash-ball"></div>
-      <div class="splash-bat"><span class="bat-sig">Sanju Samson</span></div>
-    </div>
-    <h1>Sai-Crick Pro</h1>
-    <div class="mode-author">by <strong class="sk-name">D. Sai Kiran Varma</strong></div>
-    <p class="mode-desc">Choose how you want to use the app</p>
-    <div class="mode-cards">
-      <div class="mode-card selected" onclick="App.selectMode('offline', this)">
-        <span class="material-icons-round">wifi_off</span>
-        <div class="mode-card-info">
-          <h3>Offline Mode</h3>
-          <p>Works without internet. All data stored locally. Recommended.</p>
-        </div>
-      </div>
-      <div class="mode-card" onclick="App.selectMode('online', this)">
-        <span class="material-icons-round">wifi</span>
-        <div class="mode-card-info">
-          <h3>Online Mode</h3>
-          <p>Loads fonts & icons from CDN. Needs internet on first load.</p>
-        </div>
-      </div>
-    </div>
-    <button class="mode-continue-btn" onclick="App.confirmMode()">Continue</button>
-  </div>
+
 
   <!-- Splash Screen -->
   <div id="splash-screen" style="display:none">
@@ -74,6 +48,7 @@
         <span class="material-icons-round">arrow_back</span>
       </button>
       <h1 id="page-title" class="top-title">Sai-Crick Pro <span class="author-badge" id="top-author-badge"><span class="material-icons-round">verified</span>Sai Kiran</span></h1>
+      <span id="network-badge" style="font-size:9px;font-weight:700;margin-left:4px;color:#00e676">● Online</span>
       <div class="top-actions">
         <button class="icon-btn" onclick="App.navigate('search')">
           <span class="material-icons-round">search</span>
@@ -722,19 +697,16 @@
             <h4>App Settings</h4>
             <div class="setting-item">
               <div class="setting-label">
-                <span class="material-icons-round">wifi_off</span>
+                <span class="material-icons-round" id="settings-wifi-icon">wifi</span>
                 <div>
-                  <div>Connection Mode</div>
-                  <small id="current-mode-label" style="color:var(--text-muted)">Offline</small>
+                  <div>Network Status</div>
+                  <small id="current-mode-label" style="color:#00e676">Auto-detected</small>
                 </div>
               </div>
-              <label class="toggle">
-                <input type="checkbox" id="setting-mode-toggle" onchange="App.switchMode(this.checked ? 'online' : 'offline')">
-                <span class="slider"></span>
-              </label>
+              <span id="settings-online-badge" style="font-size:12px;font-weight:700;color:#00e676">● Online</span>
             </div>
             <div class="setting-item setting-item-desc">
-              <small style="color:var(--text-muted)">Offline: data saved on device. Online: loads latest fonts & icons.</small>
+              <small style="color:var(--text-muted)">App auto-detects internet. All data is always saved locally on your device.</small>
             </div>
             <div class="setting-item">
               <span>Wide = 1 run (default)</span>
