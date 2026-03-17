@@ -1,10 +1,10 @@
-// Sai-Crick Pro — Service Worker v3
-const CACHE_NAME = 'sai-crick-pro-v3';
+// Sai-Crick Pro — Service Worker v4
+const CACHE_NAME = 'sai-crick-pro-v4';
 const ASSETS = [
   './index.html','./css/app.css','./css/scoring.css','./css/field.css','./css/components.css',
   './js/app.js','./js/db.js','./js/scoring.js','./js/scorecard.js','./js/field-positions.js',
   './js/player.js','./js/stats.js','./js/match.js','./js/search.js','./js/export.js',
-  './js/history.js','./js/utils.js','./manifest.json'
+  './js/history.js','./js/utils.js','./js/tournament.js','./manifest.json'
 ];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS).catch(() => {})));
