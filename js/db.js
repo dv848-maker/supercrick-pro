@@ -142,19 +142,25 @@ const DB = {
       innings: await db.innings.toArray(),
       balls: await db.balls.toArray(),
       fieldSetups: await db.fieldSetups.toArray(),
+      tournaments: await db.tournaments.toArray(),
+      tournamentTeams: await db.tournamentTeams.toArray(),
+      tournamentFixtures: await db.tournamentFixtures.toArray(),
       exportedAt: new Date().toISOString(),
-      version: '1.0.0'
+      version: '2.0.0'
     };
   },
 
   async importAll(data) {
-    await db.transaction('rw', db.players, db.teams, db.matches, db.innings, db.balls, db.fieldSetups, async () => {
+    await db.transaction('rw', db.players, db.teams, db.matches, db.innings, db.balls, db.fieldSetups, db.tournaments, db.tournamentTeams, db.tournamentFixtures, async () => {
       if (data.players) { await db.players.clear(); await db.players.bulkAdd(data.players); }
       if (data.teams) { await db.teams.clear(); await db.teams.bulkAdd(data.teams); }
       if (data.matches) { await db.matches.clear(); await db.matches.bulkAdd(data.matches); }
       if (data.innings) { await db.innings.clear(); await db.innings.bulkAdd(data.innings); }
       if (data.balls) { await db.balls.clear(); await db.balls.bulkAdd(data.balls); }
       if (data.fieldSetups) { await db.fieldSetups.clear(); await db.fieldSetups.bulkAdd(data.fieldSetups); }
+      if (data.tournaments) { await db.tournaments.clear(); await db.tournaments.bulkAdd(data.tournaments); }
+      if (data.tournamentTeams) { await db.tournamentTeams.clear(); await db.tournamentTeams.bulkAdd(data.tournamentTeams); }
+      if (data.tournamentFixtures) { await db.tournamentFixtures.clear(); await db.tournamentFixtures.bulkAdd(data.tournamentFixtures); }
     });
   },
 
@@ -165,6 +171,9 @@ const DB = {
     await db.innings.clear();
     await db.balls.clear();
     await db.fieldSetups.clear();
+    await db.tournaments.clear();
+    await db.tournamentTeams.clear();
+    await db.tournamentFixtures.clear();
   },
 
   // === TOURNAMENTS ===

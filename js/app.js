@@ -446,8 +446,16 @@ const App = {
   async exportAll() {
     try {
       const data = await DB.exportAll();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      saveAs(blob, `supercrick-pro-backup-${new Date().toISOString().split('T')[0]}.json`);
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `supercrick-pro-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
       Utils.toast('Backup exported successfully');
     } catch (e) {
       Utils.toast('Export failed: ' + e.message);
@@ -495,6 +503,9 @@ const App = {
   },
 
   // Weather
+  _weatherForecastData: null,
+  _weatherPlaceName: '',
+
   async loadWeather() {
     const el = document.getElementById('weather-widget');
     if (!el) return;
@@ -505,9 +516,18 @@ const App = {
     navigator.geolocation.getCurrentPosition(async pos => {
       const { latitude: lat, longitude: lon } = pos.coords;
       try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,windspeed_10m,weathercode,precipitation_probability,relativehumidity_2m&timezone=auto&forecast_days=1`;
+        // Fetch current + hourly forecast
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,windspeed_10m,weathercode,precipitation_probability,relativehumidity_2m&hourly=temperature_2m,weathercode,precipitation_probability&timezone=auto&forecast_days=2`;
         const res = await fetch(url);
         const data = await res.json();
+        App._weatherForecastData = data.hourly || null;
+        // Reverse geocode for place name
+        App._weatherPlaceName = '';
+        try {
+          const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10`);
+          const geoData = await geoRes.json();
+          App._weatherPlaceName = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.county || geoData.display_name?.split(',')[0] || '';
+        } catch(ge) {}
         App._renderWeather(data.current, lat, lon);
       } catch(e) {
         el.innerHTML = '<div class="weather-na"><span class="material-icons-round">cloud_off</span> Weather unavailable</div>';
@@ -524,6 +544,33 @@ const App = {
     Utils.toast('Weather refreshed');
   },
 
+  _getWeatherIcon(code) {
+    if (code >= 95) return '⛈️';
+    if (code >= 80) return '🌧️';
+    if (code >= 61) return '🌧️';
+    if (code >= 51) return '🌦️';
+    if (code >= 45) return '🌫️';
+    if (code >= 3) return '⛅';
+    if (code >= 1) return '🌤️';
+    return '☀️';
+  },
+
+  _getWeatherCond(code) {
+    if (code >= 95) return 'Thunderstorm';
+    if (code >= 80) return 'Heavy Rain';
+    if (code >= 61) return 'Rain';
+    if (code >= 51) return 'Drizzle';
+    if (code >= 45) return 'Foggy';
+    if (code >= 3) return 'Cloudy';
+    if (code >= 1) return 'Partly Cloudy';
+    return 'Clear';
+  },
+
+  toggleForecast() {
+    const panel = document.getElementById('weather-forecast-panel');
+    if (panel) panel.classList.toggle('open');
+  },
+
   _renderWeather(cur, lat, lon) {
     const el = document.getElementById('weather-widget');
     if (!el) return;
@@ -533,15 +580,8 @@ const App = {
     const rain = cur.precipitation_probability || 0;
     const hum = cur.relativehumidity_2m || 0;
 
-    let icon, cond;
-    if (code >= 95) { icon = '⛈️'; cond = 'Thunderstorm'; }
-    else if (code >= 80) { icon = '🌧️'; cond = 'Heavy Rain'; }
-    else if (code >= 61) { icon = '🌧️'; cond = 'Rain'; }
-    else if (code >= 51) { icon = '🌦️'; cond = 'Drizzle'; }
-    else if (code >= 45) { icon = '🌫️'; cond = 'Foggy'; }
-    else if (code >= 3)  { icon = '⛅'; cond = 'Cloudy'; }
-    else if (code >= 1)  { icon = '🌤️'; cond = 'Partly Cloudy'; }
-    else                 { icon = '☀️'; cond = 'Clear'; }
+    const icon = App._getWeatherIcon(code);
+    const cond = App._getWeatherCond(code);
 
     let cricketMsg, cricketClass;
     if (rain >= 60 || code >= 61) {
@@ -554,8 +594,43 @@ const App = {
       cricketMsg = '🏏 Playable conditions'; cricketClass = 'weather-ok';
     }
 
+    // Build 24h forecast HTML
+    let forecastHtml = '';
+    if (App._weatherForecastData && App._weatherForecastData.time) {
+      const now = new Date();
+      const nowHour = now.getHours();
+      const hourly = App._weatherForecastData;
+      let cards = '';
+      let count = 0;
+      for (let i = 0; i < hourly.time.length && count < 24; i++) {
+        const hDate = new Date(hourly.time[i]);
+        if (hDate <= now) continue;
+        const hIcon = App._getWeatherIcon(hourly.weathercode[i] || 0);
+        const hTemp = Math.round(hourly.temperature_2m[i] || 0);
+        const hRain = hourly.precipitation_probability?.[i] || 0;
+        const hTime = hDate.getHours();
+        const timeStr = hTime === 0 ? '12 AM' : hTime < 12 ? `${hTime} AM` : hTime === 12 ? '12 PM' : `${hTime-12} PM`;
+        cards += `<div class="weather-hour-card">
+          <div class="weather-hour-time">${timeStr}</div>
+          <div class="weather-hour-icon">${hIcon}</div>
+          <div class="weather-hour-temp">${hTemp}°</div>
+          ${hRain > 0 ? `<div class="weather-hour-rain">${hRain}%💧</div>` : ''}
+        </div>`;
+        count++;
+      }
+      forecastHtml = `<div id="weather-forecast-panel" class="weather-forecast">
+        <div class="weather-forecast-title">Next 24 Hours</div>
+        <div class="weather-forecast-scroll">${cards}</div>
+      </div>`;
+    }
+
+    const placeHtml = App._weatherPlaceName
+      ? `<div class="weather-place"><span class="material-icons-round">location_on</span>${App._weatherPlaceName}</div>`
+      : '';
+
     el.innerHTML = `
-      <div class="weather-card">
+      <div class="weather-card" onclick="App.toggleForecast()">
+        ${placeHtml}
         <div class="weather-main">
           <div class="weather-icon-temp">
             <span class="weather-emoji">${icon}</span>
@@ -571,6 +646,8 @@ const App = {
           </div>
         </div>
         <div class="weather-cricket-msg ${cricketClass}">${cricketMsg}</div>
+        ${forecastHtml}
+        <div class="weather-tap-hint">Tap for 24h forecast</div>
       </div>
     `;
   }
